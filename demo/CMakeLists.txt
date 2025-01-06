@@ -1,8 +1,10 @@
 project(cos-demo)
 
 if (NOT ${OS_TYPE} STREQUAL "WINDOWS")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-function")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-function")
 endif()
+
+# Collect source files
 file(GLOB cos_demo_src "${CMAKE_SOURCE_DIR}/demo/cos_demo.cpp")
 file(GLOB put_object_demo_src "${CMAKE_SOURCE_DIR}/demo/object_op_demo/put_object_demo.cpp")
 file(GLOB get_object_url_demo_src "${CMAKE_SOURCE_DIR}/demo/object_op_demo/get_object_url_demo.cpp")
@@ -21,53 +23,38 @@ file(GLOB delete_bucket_demo_src "${CMAKE_SOURCE_DIR}/demo/bucket_op_demo/delete
 file(GLOB head_bucket_demo_src "${CMAKE_SOURCE_DIR}/demo/bucket_op_demo/head_bucket_demo.cpp")
 file(GLOB put_bucket_demo_src "${CMAKE_SOURCE_DIR}/demo/bucket_op_demo/put_bucket_demo.cpp")
 
-link_directories(${POCO_LINK_DIR} ${OPENSSL_LINK_DIR}) #这一行要放到add_executable前面
-
-add_executable(cos_demo ${cos_demo_src})
-add_executable(put_object_demo ${put_object_demo_src})
-add_executable(get_object_url_demo ${get_object_url_demo_src})
-add_executable(head_object_demo ${head_object_demo_src})
-add_executable(get_object_demo ${get_object_demo_src})
-add_executable(delete_object_demo ${delete_object_demo_src})
-add_executable(put_get_object_acl_demo ${put_get_object_acl_demo_src})
-add_executable(put_get_delete_object_tagging_demo ${put_get_delete_object_tagging_demo_src})
-add_executable(restore_object_demo ${restore_object_demo_src})
-add_executable(copy_move_object_demo ${copy_move_object_demo_src})
-add_executable(multi_put_object_demo ${multi_put_object_demo_src})
-add_executable(multi_get_object_demo ${multi_get_object_demo_src})
-add_executable(select_objec_demo ${select_objec_demo_src})
-add_executable(get_bucket_list_demo ${get_bucket_list_demo_src})
-add_executable(delete_bucket_demo ${delete_bucket_demo_src})
-add_executable(head_bucket_demo ${head_bucket_demo_src})
-add_executable(put_bucket_demo ${put_bucket_demo_src})
-
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
-target_link_libraries(cos_demo cossdk ssl crypto ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(put_object_demo ssl crypto cossdk ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(get_object_url_demo ssl crypto cossdk ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(head_object_demo ssl crypto cossdk ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(get_object_demo ssl crypto cossdk ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(delete_object_demo ssl crypto cossdk ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(put_get_object_acl_demo ssl crypto cossdk ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(put_get_delete_object_tagging_demo ssl crypto cossdk ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(restore_object_demo cossdk ssl crypto ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(copy_move_object_demo cossdk ssl crypto ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(multi_put_object_demo cossdk ssl crypto ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(multi_get_object_demo cossdk ssl crypto ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(select_objec_demo ssl crypto cossdk ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(get_bucket_list_demo ssl crypto cossdk ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(delete_bucket_demo ssl crypto cossdk ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(head_bucket_demo ssl crypto cossdk ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-target_link_libraries(put_bucket_demo ssl crypto cossdk ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
+# Remove unnecessary link_directories and include_directories
+function(add_demo_target target_name source)
+    add_executable(${target_name} ${source})
+    target_include_directories(${target_name} PRIVATE 
+        ${CMAKE_SOURCE_DIR}/include
+    )
+    target_link_libraries(${target_name} PRIVATE 
+        cossdk
+        OpenSSL::SSL 
+        OpenSSL::Crypto
+        ${POCO_LIBS}
+        ${SYSTEM_LIBS}
+    )
+endfunction()
 
-include_directories(${CMAKE_SOURCE_DIR}/include/ ${POCO_INCLUDE_DIR})
-
-if(${OS_TYPE} STREQUAL "WINDOWS")
-    file(GLOB poco_libs "${CMAKE_SOURCE_DIR}/third_party/lib/${BUILD_TARGET}/poco/*")
-    file(GLOB ssl_libs "${CMAKE_SOURCE_DIR}/third_party/lib/${BUILD_TARGET}/openssl/*")
-    file(COPY ${poco_libs}
-            DESTINATION ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE})
-    file(COPY ${ssl_libs}
-            DESTINATION ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE})
-endif()
+# Add all demo targets using the function
+add_demo_target(cos_demo ${cos_demo_src})
+add_demo_target(put_object_demo ${put_object_demo_src})
+add_demo_target(get_object_url_demo ${get_object_url_demo_src})
+add_demo_target(head_object_demo ${head_object_demo_src})
+add_demo_target(get_object_demo ${get_object_demo_src})
+add_demo_target(delete_object_demo ${delete_object_demo_src})
+add_demo_target(put_get_object_acl_demo ${put_get_object_acl_demo_src})
+add_demo_target(put_get_delete_object_tagging_demo ${put_get_delete_object_tagging_demo_src})
+add_demo_target(restore_object_demo ${restore_object_demo_src})
+add_demo_target(copy_move_object_demo ${copy_move_object_demo_src})
+add_demo_target(multi_put_object_demo ${multi_put_object_demo_src})
+add_demo_target(multi_get_object_demo ${multi_get_object_demo_src})
+add_demo_target(select_objec_demo ${select_objec_demo_src})
+add_demo_target(get_bucket_list_demo ${get_bucket_list_demo_src})
+add_demo_target(delete_bucket_demo ${delete_bucket_demo_src})
+add_demo_target(head_bucket_demo ${head_bucket_demo_src})
+add_demo_target(put_bucket_demo ${put_bucket_demo_src})

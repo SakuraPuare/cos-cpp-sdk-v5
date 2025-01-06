@@ -34,14 +34,23 @@ message("Sdk header: ${sdk_header}")
 message("Sdk src: ${sdk_src}")
 
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
-include_directories(${CMAKE_SOURCE_DIR}/include/ ${POCO_INCLUDE_DIR})
+
 add_library(${PROJECT_NAME} STATIC ${sdk_src} ${sdk_header})
+target_include_directories(${PROJECT_NAME} PUBLIC
+        ${CMAKE_SOURCE_DIR}/include
+)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${POCO_LIBS})
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "cossdk")
 
-if(BUILD_SHARED_LIB)
+if (BUILD_SHARED_LIB)
     message(STATUS "Build shared lib")
-    link_directories(${POCO_LINK_DIR} ${OPENSSL_LINK_DIR}) #这一行要放到add_library前面
     add_library(${PROJECT_NAME}-shared SHARED ${sdk_src})
-    include_directories(${CMAKE_SOURCE_DIR}/include/ ${POCO_INCLUDE_DIR})
-    target_link_libraries(${PROJECT_NAME}-shared ${POCO_LIBS} ${OPENSSL_LIBS} ${SYSTEM_LIBS})
-endif()
+    target_include_directories(${PROJECT_NAME}-shared PUBLIC
+            ${CMAKE_SOURCE_DIR}/include
+    )
+    target_link_libraries(${PROJECT_NAME}-shared PRIVATE
+            ${POCO_LIBS}
+            ${OPENSSL_LIBS}
+            ${SYSTEM_LIBS}
+    )
+endif ()

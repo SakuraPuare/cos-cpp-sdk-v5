@@ -25,6 +25,7 @@
 #include "Poco/RecursiveDirectoryIterator.h"
 #include "Poco/SortedDirectoryIterator.h"
 #include "Poco/StreamCopier.h"
+#include "Poco/JSON/JSONException.h"
 #include "Poco/ThreadPool.h"
 #include "cos_config.h"
 #include "cos_sys_config.h"
@@ -37,7 +38,7 @@
 #include "util/codec_util.h"
 #include "util/crc64.h"
 #include "util/file_util.h"
-#include "util/http_sender.h"
+
 #include "util/string_util.h"
 #include "util/retry_util.h"
 #include "util/illegal_intercept.h"

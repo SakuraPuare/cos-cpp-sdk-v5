@@ -5,6 +5,9 @@
 #include <mutex>
 #include <string>
 
+#include "Poco/JSON/Parser.h"
+#include "Poco/JSON/JSONException.h"
+
 #include "cos_sys_config.h"
 #include "util/string_util.h"
 #include "util/illegal_intercept.h"

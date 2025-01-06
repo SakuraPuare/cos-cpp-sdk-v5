@@ -7,7 +7,7 @@
 #include <mutex>
 #include <string>
 
-#include "Poco/JSON/Parser.h"
+#include "Poco/JSON/Object.h"
 #include "util/log_util.h"
 
 namespace qcloud_cos {

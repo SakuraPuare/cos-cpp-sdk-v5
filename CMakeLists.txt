@@ -1,13 +1,44 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
 CMAKE_policy(SET CMP0015 NEW)
 project(cos-cpp-sdk)
-set(CMAKE_VERBOSE_MAKEFILE  ON)
 
-option(BUILD_UNITTEST "Build unittest" OFF)
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
+option(BUILD_UNITTEST "Build unittest" ON)
 option(BUILD_DEMO "Build demo" ON)
-option(BUILD_SHARED_LIB "Build shared library" OFF)
-option(ENABLE_COVERAGE "Enable Coverage" OFF)
+option(BUILD_SHARED_LIB "Build shared library" ON)
+option(ENABLE_COVERAGE "Enable Coverage" ON)
 
+# Set build type if not set
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Debug")
+endif()
+
+# Configure Poco build options
+set(ENABLE_DATA_MYSQL FALSE)
+set(ENABLE_NETSSL ON CACHE BOOL "Enable NetSSL" FORCE)
+set(ENABLE_CRYPTO ON CACHE BOOL "Enable Crypto" FORCE)
+set(ENABLE_JSON ON CACHE BOOL "Enable JSON" FORCE)
+set(ENABLE_XML ON CACHE BOOL "Enable XML" FORCE)
+set(ENABLE_FOUNDATION ON CACHE BOOL "Enable Foundation" FORCE)
+
+find_package(OpenSSL REQUIRED)
+
+# Add Poco as subdirectory
+add_subdirectory(third_party/poco)
+
+# Define Poco components needed
+set(POCO_LIBS 
+    Poco::NetSSL 
+    Poco::Net 
+    Poco::Crypto 
+    Poco::Util 
+    Poco::JSON 
+    Poco::XML 
+    Poco::Foundation
+)
+
+# OS Type detection
 if(APPLE)
     set(OS_TYPE "APPLE")
 elseif(UNIX)
@@ -15,86 +46,51 @@ elseif(UNIX)
 elseif(WIN32)
     set(OS_TYPE "WINDOWS")
 else()
-    message(FATAL_ERROR "unkonwn os type")
+    message(FATAL_ERROR "unknown os type")
 endif()
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Android")
-    set(OS_TYPE "Android")
-    message(STATUS "SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
-elseif(${CMAKE_SYSTEM_NAME} STREQUAL "iOS")
-    set(OS_TYPE "iOS")
-    message(STATUS "SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
-endif()
-
-message(STATUS "OS type: ${OS_TYPE}")
-
-set(POCO_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/third_party/include/)
-set(POCO_LIBS PocoNetSSL PocoNet PocoCrypto PocoUtil PocoJSON PocoXML PocoFoundation)
-if (${OS_TYPE} STREQUAL "WINDOWS")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-    set(BUILD_TARGET "Win32")
-    if (CMAKE_CL_64)
-        set(BUILD_TARGET "x64")
-    endif()
-    message(STATUS "Build target: ${BUILD_TARGET}")
-    if (NOT DEFINED ${CMAKE_BUILD_TYPE})
-        set(CMAKE_BUILD_TYPE "Release")
-    endif()
-    message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-
-    set(POCO_LINK_DIR ${CMAKE_SOURCE_DIR}/third_party/lib/${BUILD_TARGET}/poco)
-
-    set(SYSTEM_LIBS "")
-    #需要加该参数，不然VS会报错
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /utf-8")
-elseif(${OS_TYPE} STREQUAL "iOS")
-    set(POCO_LINK_DIR ${CMAKE_SOURCE_DIR}/third_party/lib/${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}/poco/)
-    set(OPENSSL_LINK_DIR ${CMAKE_SOURCE_DIR}/third_party/lib/${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}/openssl/)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra")
-    set(SYSTEM_LIBS stdc++ pthread) 
-    set(OPENSSL_LIBS ssl crypto)
-elseif(${OS_TYPE} STREQUAL "Android")
-    set(POCO_LINK_DIR ${CMAKE_SOURCE_DIR}/third_party/lib/${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}/poco/)
-    set(OPENSSL_LINK_DIR ${CMAKE_SOURCE_DIR}/third_party/lib/${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}/openssl/)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra")
-    set(SYSTEM_LIBS stdc++)
-    set(OPENSSL_LIBS ssl crypto)
-# Linux or MacOs
-else()
-    if (${OS_TYPE} STREQUAL "APPLE")
-        set(POCO_LINK_DIR ${CMAKE_SOURCE_DIR}/third_party/lib/macOS/poco/)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra")
-    else()
-        set(POCO_LINK_DIR ${CMAKE_SOURCE_DIR}/third_party/lib/linux/poco/)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra")
-    endif()
-
-    set(SYSTEM_LIBS stdc++ pthread)
-endif()
-
+# Coverage settings
 if(ENABLE_COVERAGE)
-# coverage option
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
 endif()
 
+# Add source directory first
 add_subdirectory(src)
-
-if(BUILD_UNITTEST)
-    message(STATUS "Build unittest")
-
-    set(GTEST_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/third_party/include/gtest/)
-    set(GTEST_LINK_DIR ${CMAKE_SOURCE_DIR}/third_party/lib/linux/gtest/)
-    if (${OS_TYPE} STREQUAL "WINDOWS")
-        set(GTEST_LINK_DIR  ${CMAKE_SOURCE_DIR}/third_party/lib/${BUILD_TARGET}/gtest)
-    endif()
-    set(GTEST_LIBS gtest gtest_main)
-
-    set(UT_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/unittest/include/)
-
-    add_subdirectory(unittest)
-endif()
 
 if(BUILD_DEMO)
     message(STATUS "Build demo")
     add_subdirectory(demo)
+endif()
+
+# Configure testing
+if(BUILD_UNITTEST)
+    # Enable testing right after project()
+    enable_testing()
+
+    # Include GoogleTest module
+    include(GoogleTest)
+    message(STATUS "Build unittest")
+    
+    # Configure GTest
+    set(BUILD_GMOCK OFF CACHE BOOL "Builds the googlemock subproject" FORCE)
+    set(INSTALL_GTEST OFF CACHE BOOL "Enable installation of googletest" FORCE)
+    add_subdirectory(third_party/gtest)
+    
+    # Add unittest directory
+    add_subdirectory(unittest)
+endif()
+
+# Coverage target
+if(ENABLE_COVERAGE)
+    find_program(LCOV lcov REQUIRED)
+    find_program(GENHTML genhtml REQUIRED)
+    
+    add_custom_target(coverage
+        COMMAND ${LCOV} --directory . --zerocounters
+        COMMAND ctest --output-on-failure
+        COMMAND ${LCOV} --directory . --capture --output-file coverage.info
+        COMMAND ${GENHTML} coverage.info --output-directory coverage_report
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Generating coverage report..."
+    )
 endif()

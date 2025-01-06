@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <cstdint>
 
 namespace qcloud_cos {
 class TestUtils {
