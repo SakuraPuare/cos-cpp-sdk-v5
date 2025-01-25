@@ -48,7 +48,7 @@ void AuthTool::FilterAndSetSignHeader(
   for (std::map<std::string, std::string>::const_iterator itr = headers.begin();
        itr != headers.end(); ++itr) {
     if (! not_sign_headers.count(itr->first) && (sign_headers.count(StringUtil::StringToLower(itr->first)) > 0 ||
-        !strncmp(itr->first.c_str(), "x-cos", 5))) {
+        !strncmp(itr->first.c_str(), "x-cos", 5) || !strncmp(itr->first.c_str(), "x-ci", 4))) {
       filted_req_headers->insert(std::make_pair(itr->first, itr->second));
     }
   }
@@ -153,16 +153,19 @@ std::string AuthTool::Sign(const std::string& access_key,
   std::string format_str = lower_method + "\n" + uri + "\n" + param_value_list +
                            "\n" + header_value_list + "\n";
 
+  SDK_LOG_DBG("format string :%s", format_str.c_str());
   // 4. StringToSign
   Sha1 sha1;
   sha1.Append(format_str.c_str(), format_str.size());
   std::string string_to_sign =
       "sha1\n" + start_end_time_str + "\n" + sha1.Final() + "\n";
 
+  SDK_LOG_DBG("string_to_sign :%s", string_to_sign.c_str());
   // 5. signature
   std::string sign_key = CodecUtil::HmacSha1Hex(start_end_time_str, secret_key);
   std::transform(sign_key.begin(), sign_key.end(), sign_key.begin(), ::tolower);
 
+  SDK_LOG_DBG("sign_key :%s", sign_key.c_str());
   std::string signature = CodecUtil::HmacSha1Hex(string_to_sign, sign_key);
   std::transform(signature.begin(), signature.end(), signature.begin(),
                  ::tolower);
